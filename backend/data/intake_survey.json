@@ -1,0 +1,370 @@
+{
+  "survey_metadata": {
+    "title": "Mental Health & Wellness Assessment",
+    "version": "1.0",
+    "description": "Clinical intake survey for mental health triage and routing",
+    "estimated_time": "10-15 minutes",
+    "disclaimer": "This assessment is for screening purposes only and does not constitute a medical diagnosis. Please consult with a qualified healthcare provider for professional evaluation."
+  },
+  "sections": [
+    {
+      "section_id": "demographics",
+      "title": "Basic Information",
+      "description": "Help us understand your background",
+      "questions": [
+        {
+          "id": "age_range",
+          "type": "select",
+          "question": "What is your age range?",
+          "required": true,
+          "options": [
+            { "value": "18-24", "label": "18-24 years" },
+            { "value": "25-34", "label": "25-34 years" },
+            { "value": "35-44", "label": "35-44 years" },
+            { "value": "45-54", "label": "45-54 years" },
+            { "value": "55-64", "label": "55-64 years" },
+            { "value": "65+", "label": "65+ years" }
+          ]
+        },
+        {
+          "id": "primary_concern",
+          "type": "select",
+          "question": "What brings you here today? (Select your primary concern)",
+          "required": true,
+          "options": [
+            { "value": "anxiety", "label": "Feeling anxious, worried, or on edge" },
+            { "value": "depression", "label": "Feeling sad, down, or hopeless" },
+            { "value": "trauma", "label": "Dealing with past traumatic experiences" },
+            { "value": "lifestyle", "label": "Looking to improve overall wellness and life habits" },
+            { "value": "multiple", "label": "Multiple concerns" },
+            { "value": "unsure", "label": "Not sure, just know I need support" }
+          ]
+        }
+      ]
+    },
+    {
+      "section_id": "phq9",
+      "title": "Mood Assessment (PHQ-9)",
+      "description": "Over the last 2 weeks, how often have you been bothered by any of the following problems?",
+      "scale": [
+        { "value": 0, "label": "Not at all" },
+        { "value": 1, "label": "Several days" },
+        { "value": 2, "label": "More than half the days" },
+        { "value": 3, "label": "Nearly every day" }
+      ],
+      "questions": [
+        {
+          "id": "phq9_1",
+          "type": "likert",
+          "question": "Little interest or pleasure in doing things",
+          "required": true,
+          "clinical_domain": "depression"
+        },
+        {
+          "id": "phq9_2",
+          "type": "likert",
+          "question": "Feeling down, depressed, or hopeless",
+          "required": true,
+          "clinical_domain": "depression"
+        },
+        {
+          "id": "phq9_3",
+          "type": "likert",
+          "question": "Trouble falling or staying asleep, or sleeping too much",
+          "required": true,
+          "clinical_domain": "depression"
+        },
+        {
+          "id": "phq9_4",
+          "type": "likert",
+          "question": "Feeling tired or having little energy",
+          "required": true,
+          "clinical_domain": "depression"
+        },
+        {
+          "id": "phq9_5",
+          "type": "likert",
+          "question": "Poor appetite or overeating",
+          "required": true,
+          "clinical_domain": "depression"
+        },
+        {
+          "id": "phq9_6",
+          "type": "likert",
+          "question": "Feeling bad about yourself or that you are a failure or have let yourself or your family down",
+          "required": true,
+          "clinical_domain": "depression"
+        },
+        {
+          "id": "phq9_7",
+          "type": "likert",
+          "question": "Trouble concentrating on things, such as reading the newspaper or watching television",
+          "required": true,
+          "clinical_domain": "depression"
+        },
+        {
+          "id": "phq9_8",
+          "type": "likert",
+          "question": "Moving or speaking so slowly that other people could have noticed. Or the opposite - being so fidgety or restless that you have been moving around a lot more than usual",
+          "required": true,
+          "clinical_domain": "depression"
+        },
+        {
+          "id": "phq9_9",
+          "type": "likert",
+          "question": "Thoughts that you would be better off dead, or of hurting yourself",
+          "required": true,
+          "clinical_domain": "depression",
+          "crisis_indicator": true
+        }
+      ]
+    },
+    {
+      "section_id": "gad7",
+      "title": "Anxiety Assessment (GAD-7)",
+      "description": "Over the last 2 weeks, how often have you been bothered by the following problems?",
+      "scale": [
+        { "value": 0, "label": "Not at all" },
+        { "value": 1, "label": "Several days" },
+        { "value": 2, "label": "More than half the days" },
+        { "value": 3, "label": "Nearly every day" }
+      ],
+      "questions": [
+        {
+          "id": "gad7_1",
+          "type": "likert",
+          "question": "Feeling nervous, anxious, or on edge",
+          "required": true,
+          "clinical_domain": "anxiety"
+        },
+        {
+          "id": "gad7_2",
+          "type": "likert",
+          "question": "Not being able to stop or control worrying",
+          "required": true,
+          "clinical_domain": "anxiety"
+        },
+        {
+          "id": "gad7_3",
+          "type": "likert",
+          "question": "Worrying too much about different things",
+          "required": true,
+          "clinical_domain": "anxiety"
+        },
+        {
+          "id": "gad7_4",
+          "type": "likert",
+          "question": "Trouble relaxing",
+          "required": true,
+          "clinical_domain": "anxiety"
+        },
+        {
+          "id": "gad7_5",
+          "type": "likert",
+          "question": "Being so restless that it is hard to sit still",
+          "required": true,
+          "clinical_domain": "anxiety"
+        },
+        {
+          "id": "gad7_6",
+          "type": "likert",
+          "question": "Becoming easily annoyed or irritable",
+          "required": true,
+          "clinical_domain": "anxiety"
+        },
+        {
+          "id": "gad7_7",
+          "type": "likert",
+          "question": "Feeling afraid, as if something awful might happen",
+          "required": true,
+          "clinical_domain": "anxiety"
+        }
+      ]
+    },
+    {
+      "section_id": "pcl5_brief",
+      "title": "Trauma Assessment (PCL-5 Brief)",
+      "description": "Below is a list of problems that people sometimes have in response to very stressful experiences. Please read each problem carefully and then indicate how much you have been bothered by that problem in the past month.",
+      "scale": [
+        { "value": 0, "label": "Not at all" },
+        { "value": 1, "label": "A little bit" },
+        { "value": 2, "label": "Moderately" },
+        { "value": 3, "label": "Quite a bit" },
+        { "value": 4, "label": "Extremely" }
+      ],
+      "questions": [
+        {
+          "id": "pcl5_1",
+          "type": "likert",
+          "question": "Repeated, disturbing, and unwanted memories of the stressful experience",
+          "required": true,
+          "clinical_domain": "trauma"
+        },
+        {
+          "id": "pcl5_2",
+          "type": "likert",
+          "question": "Repeated, disturbing dreams of the stressful experience",
+          "required": true,
+          "clinical_domain": "trauma"
+        },
+        {
+          "id": "pcl5_3",
+          "type": "likert",
+          "question": "Suddenly feeling or acting as if the stressful experience were actually happening again",
+          "required": true,
+          "clinical_domain": "trauma"
+        },
+        {
+          "id": "pcl5_4",
+          "type": "likert",
+          "question": "Feeling very upset when something reminded you of the stressful experience",
+          "required": true,
+          "clinical_domain": "trauma"
+        },
+        {
+          "id": "pcl5_5",
+          "type": "likert",
+          "question": "Avoiding memories, thoughts, or feelings related to the stressful experience",
+          "required": true,
+          "clinical_domain": "trauma"
+        },
+        {
+          "id": "pcl5_6",
+          "type": "likert",
+          "question": "Loss of interest in activities that you used to enjoy",
+          "required": true,
+          "clinical_domain": "trauma"
+        },
+        {
+          "id": "pcl5_7",
+          "type": "likert",
+          "question": "Feeling distant or cut off from other people",
+          "required": true,
+          "clinical_domain": "trauma"
+        },
+        {
+          "id": "pcl5_8",
+          "type": "likert",
+          "question": "Irritable behavior, angry outbursts, or acting aggressively",
+          "required": true,
+          "clinical_domain": "trauma"
+        }
+      ]
+    },
+    {
+      "section_id": "lifestyle",
+      "title": "Lifestyle & Wellness Assessment",
+      "description": "Help us understand your current lifestyle and wellness goals",
+      "questions": [
+        {
+          "id": "sleep_quality",
+          "type": "likert",
+          "question": "How would you rate your sleep quality over the past month?",
+          "required": true,
+          "scale": [
+            { "value": 1, "label": "Very poor" },
+            { "value": 2, "label": "Poor" },
+            { "value": 3, "label": "Fair" },
+            { "value": 4, "label": "Good" },
+            { "value": 5, "label": "Very good" }
+          ],
+          "clinical_domain": "lifestyle"
+        },
+        {
+          "id": "exercise_frequency",
+          "type": "select",
+          "question": "How often do you engage in physical exercise or activity?",
+          "required": true,
+          "options": [
+            { "value": "daily", "label": "Daily" },
+            { "value": "several_weekly", "label": "Several times per week" },
+            { "value": "weekly", "label": "Once a week" },
+            { "value": "monthly", "label": "A few times per month" },
+            { "value": "rarely", "label": "Rarely" },
+            { "value": "never", "label": "Never" }
+          ],
+          "clinical_domain": "lifestyle"
+        },
+        {
+          "id": "stress_management",
+          "type": "likert",
+          "question": "How well do you feel you manage stress in your daily life?",
+          "required": true,
+          "scale": [
+            { "value": 1, "label": "Very poorly" },
+            { "value": 2, "label": "Poorly" },
+            { "value": 3, "label": "Okay" },
+            { "value": 4, "label": "Well" },
+            { "value": 5, "label": "Very well" }
+          ],
+          "clinical_domain": "lifestyle"
+        },
+        {
+          "id": "wellness_goals",
+          "type": "multiselect",
+          "question": "What wellness areas would you like to focus on? (Select all that apply)",
+          "required": true,
+          "options": [
+            { "value": "stress_reduction", "label": "Stress reduction and relaxation" },
+            { "value": "sleep_improvement", "label": "Better sleep habits" },
+            { "value": "exercise_routine", "label": "Regular exercise routine" },
+            { "value": "nutrition", "label": "Healthy eating habits" },
+            { "value": "mindfulness", "label": "Mindfulness and meditation" },
+            { "value": "work_life_balance", "label": "Work-life balance" },
+            { "value": "relationships", "label": "Improving relationships" },
+            { "value": "productivity", "label": "Productivity and time management" }
+          ],
+          "clinical_domain": "lifestyle"
+        }
+      ]
+    },
+    {
+      "section_id": "support_preferences",
+      "title": "Support Preferences",
+      "description": "Help us understand how you prefer to receive support",
+      "questions": [
+        {
+          "id": "preferred_support_type",
+          "type": "select",
+          "question": "What type of support are you most interested in?",
+          "required": true,
+          "options": [
+            { "value": "individual_therapy", "label": "Individual therapy sessions" },
+            { "value": "group_therapy", "label": "Group therapy" },
+            { "value": "self_guided", "label": "Self-guided resources and tools" },
+            { "value": "coaching", "label": "Life/wellness coaching" },
+            { "value": "combination", "label": "Combination of approaches" }
+          ]
+        },
+        {
+          "id": "urgency_level",
+          "type": "select",
+          "question": "How urgently do you feel you need support?",
+          "required": true,
+          "options": [
+            { "value": "immediate", "label": "I need support immediately" },
+            { "value": "within_week", "label": "Within the next week" },
+            { "value": "within_month", "label": "Within the next month" },
+            { "value": "flexible", "label": "I'm flexible with timing" }
+          ]
+        }
+      ]
+    }
+  ],
+  "scoring": {
+    "phq9": {
+      "mild": "5-9",
+      "moderate": "10-14",
+      "moderately_severe": "15-19",
+      "severe": "20-27"
+    },
+    "gad7": {
+      "mild": "5-9",
+      "moderate": "10-14",
+      "severe": "15-21"
+    },
+    "pcl5_brief": {
+      "probable_ptsd": ">=20"
+    }
+  }
+} 

@@ -1,0 +1,19 @@
+{
+  "model_type": "gemini_routing_agent",
+  "version": "1.0",
+  "llm_model": "gemini-2.0-flash-exp",
+  "embedding_model": "models/embedding-001",
+  "categories": [
+    "ANXIETY",
+    "DEPRESSION",
+    "TRAUMA",
+    "LIFESTYLE",
+    "CRISIS"
+  ],
+  "clinical_thresholds": {
+    "phq9_moderate": 10,
+    "gad7_moderate": 10,
+    "pcl5_probable_ptsd": 20,
+    "crisis_threshold": 1
+  }
+}
