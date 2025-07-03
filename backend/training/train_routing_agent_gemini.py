@@ -20,37 +20,40 @@ from langchain.schema import Document
 from langchain.prompts import PromptTemplate
 
 import logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 class GeminiRoutingAgentTrainer:
     def __init__(self, google_api_key: str = None):
         """Initialize the routing agent trainer with Google Gemini."""
         self.google_api_key = google_api_key or os.getenv("GOOGLE_API_KEY")
         if not self.google_api_key:
-            raise ValueError("Google API key is required. Get it free from https://makersuite.google.com/app/apikey")
-        
+            raise ValueError(
+                "Google API key is required. Get it free from https://makersuite.google.com/app/apikey"
+            )
+
         # Initialize Gemini 2.5 Flash (free tier)
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.0-flash-exp",
             google_api_key=self.google_api_key,
             temperature=0.1,
-            convert_system_message_to_human=True
+            convert_system_message_to_human=True,
         )
-        
+
         # Use Google's embedding model (also free)
         self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001",
-            google_api_key=self.google_api_key
+            model="models/embedding-001", google_api_key=self.google_api_key
         )
-        
+
         self.vectorstore = None
         self.routing_chain = None
-        
+
     def load_training_data(self) -> List[Document]:
         """Load and prepare training data for the routing agent."""
         training_data = []
-        
+
         # Clinical guidelines and routing rules
         clinical_guidelines = [
             Document(
@@ -68,7 +71,7 @@ class GeminiRoutingAgentTrainer:
                 - Exposure therapy for specific phobias
                 - Mindfulness-based interventions
                 """,
-                metadata={"category": "anxiety", "type": "clinical_guideline"}
+                metadata={"category": "anxiety", "type": "clinical_guideline"},
             ),
             Document(
                 page_content="""
@@ -90,7 +93,7 @@ class GeminiRoutingAgentTrainer:
                 - Interpersonal therapy
                 - Consider psychiatric evaluation
                 """,
-                metadata={"category": "depression", "type": "clinical_guideline"}
+                metadata={"category": "depression", "type": "clinical_guideline"},
             ),
             Document(
                 page_content="""
@@ -108,7 +111,7 @@ class GeminiRoutingAgentTrainer:
                 - Somatic approaches
                 - Group therapy for trauma survivors
                 """,
-                metadata={"category": "trauma", "type": "clinical_guideline"}
+                metadata={"category": "trauma", "type": "clinical_guideline"},
             ),
             Document(
                 page_content="""
@@ -128,10 +131,10 @@ class GeminiRoutingAgentTrainer:
                 - Mindfulness training
                 - Productivity coaching
                 """,
-                metadata={"category": "lifestyle", "type": "clinical_guideline"}
-            )
+                metadata={"category": "lifestyle", "type": "clinical_guideline"},
+            ),
         ]
-        
+
         # Sample case studies for training
         case_studies = [
             Document(
@@ -143,7 +146,7 @@ class GeminiRoutingAgentTrainer:
                 Sleep quality: Poor, Exercise: Rarely
                 ROUTING: ANXIETY - High GAD-7 score with worry-focused symptoms
                 """,
-                metadata={"category": "anxiety", "type": "case_study"}
+                metadata={"category": "anxiety", "type": "case_study"},
             ),
             Document(
                 page_content="""
@@ -154,7 +157,7 @@ class GeminiRoutingAgentTrainer:
                 Sleep quality: Poor (too much sleep), Exercise: Never
                 ROUTING: DEPRESSION - High PHQ-9 with anhedonia and fatigue
                 """,
-                metadata={"category": "depression", "type": "case_study"}
+                metadata={"category": "depression", "type": "case_study"},
             ),
             Document(
                 page_content="""
@@ -165,7 +168,7 @@ class GeminiRoutingAgentTrainer:
                 Sleep quality: Very poor, Exercise: Several times weekly
                 ROUTING: TRAUMA - High PCL-5 score with clear PTSD symptoms
                 """,
-                metadata={"category": "trauma", "type": "case_study"}
+                metadata={"category": "trauma", "type": "case_study"},
             ),
             Document(
                 page_content="""
@@ -177,29 +180,28 @@ class GeminiRoutingAgentTrainer:
                 Goals: Stress reduction, better habits, mindfulness
                 ROUTING: LIFESTYLE - Low clinical scores with wellness focus
                 """,
-                metadata={"category": "lifestyle", "type": "case_study"}
-            )
+                metadata={"category": "lifestyle", "type": "case_study"},
+            ),
         ]
-        
+
         training_data.extend(clinical_guidelines)
         training_data.extend(case_studies)
-        
+
         return training_data
-    
+
     def create_vectorstore(self, documents: List[Document]):
         """Create a vector store from training documents."""
         logger.info("Creating vector store from training data...")
-        
+
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200
+            chunk_size=1000, chunk_overlap=200
         )
-        
+
         splits = text_splitter.split_documents(documents)
         self.vectorstore = FAISS.from_documents(splits, self.embeddings)
-        
+
         logger.info(f"Vector store created with {len(splits)} document chunks")
-    
+
     def create_routing_prompt(self) -> PromptTemplate:
         """Create the prompt template for routing decisions."""
         template = """
@@ -232,69 +234,72 @@ class GeminiRoutingAgentTrainer:
         
         Routing Decision:
         """
-        
+
         return PromptTemplate(
-            template=template,
-            input_variables=["context", "question"]
+            template=template, input_variables=["context", "question"]
         )
-    
+
     def build_routing_chain(self):
         """Build the routing chain using retrieval-augmented generation."""
         if not self.vectorstore:
             raise ValueError("Vector store must be created first")
-        
+
         prompt = self.create_routing_prompt()
-        
+
         self.routing_chain = RetrievalQA.from_chain_type(
             llm=self.llm,
             chain_type="stuff",
             retriever=self.vectorstore.as_retriever(search_kwargs={"k": 4}),
-            chain_type_kwargs={"prompt": prompt}
+            chain_type_kwargs={"prompt": prompt},
         )
-        
+
         logger.info("Routing chain created successfully")
-    
+
     def route_user(self, assessment_data: Dict[str, Any]) -> Dict[str, Any]:
         """Route a user based on their assessment data."""
         if not self.routing_chain:
             raise ValueError("Routing chain must be built first")
-        
+
         # Calculate clinical scores
         scores = self.calculate_clinical_scores(assessment_data)
-        
+
         # Format assessment data for the prompt
         formatted_data = self.format_assessment_data(assessment_data, scores)
-        
+
         # Get routing decision
         result = self.routing_chain.run(formatted_data)
-        
+
         # Parse the result
         routing_decision = self.parse_routing_result(result, scores)
-        
+
         return routing_decision
-    
-    def calculate_clinical_scores(self, assessment_data: Dict[str, Any]) -> Dict[str, int]:
+
+    def calculate_clinical_scores(
+        self, assessment_data: Dict[str, Any]
+    ) -> Dict[str, int]:
         """Calculate PHQ-9, GAD-7, and PCL-5 scores from assessment data."""
         scores = {}
-        
+
         # PHQ-9 score (depression)
-        phq9_items = [f'phq9_{i}' for i in range(1, 10)]
-        scores['phq9'] = sum(assessment_data.get(item, 0) for item in phq9_items)
-        
+        phq9_items = [f"phq9_{i}" for i in range(1, 10)]
+        scores["phq9"] = sum(assessment_data.get(item, 0) for item in phq9_items)
+
         # GAD-7 score (anxiety)
-        gad7_items = [f'gad7_{i}' for i in range(1, 8)]
-        scores['gad7'] = sum(assessment_data.get(item, 0) for item in gad7_items)
-        
+        gad7_items = [f"gad7_{i}" for i in range(1, 8)]
+        scores["gad7"] = sum(assessment_data.get(item, 0) for item in gad7_items)
+
         # PCL-5 brief score (trauma)
-        pcl5_items = [f'pcl5_{i}' for i in range(1, 9)]
-        scores['pcl5'] = sum(assessment_data.get(item, 0) for item in pcl5_items)
-        
+        pcl5_items = [f"pcl5_{i}" for i in range(1, 9)]
+        scores["pcl5"] = sum(assessment_data.get(item, 0) for item in pcl5_items)
+
         # Crisis indicator (suicidal ideation)
-        scores['crisis_indicator'] = assessment_data.get('phq9_9', 0)
-        
+        scores["crisis_indicator"] = assessment_data.get("phq9_9", 0)
+
         return scores
-    
-    def format_assessment_data(self, assessment_data: Dict[str, Any], scores: Dict[str, int]) -> str:
+
+    def format_assessment_data(
+        self, assessment_data: Dict[str, Any], scores: Dict[str, int]
+    ) -> str:
         """Format assessment data for the routing prompt."""
         formatted = f"""
         Clinical Scores:
@@ -312,58 +317,64 @@ class GeminiRoutingAgentTrainer:
         Support Preference: {assessment_data.get('preferred_support_type', 'Not specified')}
         Urgency: {assessment_data.get('urgency_level', 'Not specified')}
         """
-        
+
         return formatted
-    
-    def parse_routing_result(self, result: str, scores: Dict[str, int]) -> Dict[str, Any]:
+
+    def parse_routing_result(
+        self, result: str, scores: Dict[str, int]
+    ) -> Dict[str, Any]:
         """Parse the routing result from the LLM response."""
-        lines = result.strip().split('\n')
+        lines = result.strip().split("\n")
         routing_decision = {
-            'primary_category': 'LIFESTYLE',  # default
-            'confidence': 0.5,
-            'secondary_considerations': [],
-            'reasoning': '',
-            'recommendations': [],
-            'clinical_scores': scores,
-            'crisis_flag': scores['crisis_indicator'] > 0
+            "primary_category": "LIFESTYLE",  # default
+            "confidence": 0.5,
+            "secondary_considerations": [],
+            "reasoning": "",
+            "recommendations": [],
+            "clinical_scores": scores,
+            "crisis_flag": scores["crisis_indicator"] > 0,
         }
-        
+
         for line in lines:
             line = line.strip()
-            if line.startswith('PRIMARY_CATEGORY:'):
-                routing_decision['primary_category'] = line.split(':', 1)[1].strip()
-            elif line.startswith('CONFIDENCE:'):
+            if line.startswith("PRIMARY_CATEGORY:"):
+                routing_decision["primary_category"] = line.split(":", 1)[1].strip()
+            elif line.startswith("CONFIDENCE:"):
                 try:
-                    routing_decision['confidence'] = float(line.split(':', 1)[1].strip())
+                    routing_decision["confidence"] = float(
+                        line.split(":", 1)[1].strip()
+                    )
                 except:
                     pass
-            elif line.startswith('SECONDARY_CONSIDERATIONS:'):
-                considerations = line.split(':', 1)[1].strip()
-                routing_decision['secondary_considerations'] = [c.strip() for c in considerations.split(',') if c.strip()]
-            elif line.startswith('REASONING:'):
-                routing_decision['reasoning'] = line.split(':', 1)[1].strip()
-            elif line.startswith('RECOMMENDATIONS:'):
-                routing_decision['recommendations'] = [line.split(':', 1)[1].strip()]
-        
+            elif line.startswith("SECONDARY_CONSIDERATIONS:"):
+                considerations = line.split(":", 1)[1].strip()
+                routing_decision["secondary_considerations"] = [
+                    c.strip() for c in considerations.split(",") if c.strip()
+                ]
+            elif line.startswith("REASONING:"):
+                routing_decision["reasoning"] = line.split(":", 1)[1].strip()
+            elif line.startswith("RECOMMENDATIONS:"):
+                routing_decision["recommendations"] = [line.split(":", 1)[1].strip()]
+
         return routing_decision
-    
+
     def train_and_save(self, save_path: str = "models/routing_agent_gemini"):
         """Train the routing agent and save the model."""
         logger.info("Starting Gemini routing agent training...")
-        
+
         # Load training data
         documents = self.load_training_data()
-        
+
         # Create vector store
         self.create_vectorstore(documents)
-        
+
         # Build routing chain
         self.build_routing_chain()
-        
+
         # Save the model
         os.makedirs(save_path, exist_ok=True)
         self.vectorstore.save_local(os.path.join(save_path, "vectorstore"))
-        
+
         # Save configuration
         config = {
             "model_type": "gemini_routing_agent",
@@ -375,77 +386,118 @@ class GeminiRoutingAgentTrainer:
                 "phq9_moderate": 10,
                 "gad7_moderate": 10,
                 "pcl5_probable_ptsd": 20,
-                "crisis_threshold": 1
-            }
+                "crisis_threshold": 1,
+            },
         }
-        
-        with open(os.path.join(save_path, "config.json"), 'w') as f:
+
+        with open(os.path.join(save_path, "config.json"), "w") as f:
             json.dump(config, f, indent=2)
-        
+
         logger.info(f"Gemini routing agent saved to {save_path}")
-        
+
         return self
-    
+
     def test_routing(self):
         """Test the routing agent with sample cases."""
         logger.info("Testing Gemini routing agent...")
-        
+
         test_cases = [
             {
                 "name": "High Anxiety Case",
                 "data": {
                     "primary_concern": "anxiety",
                     "age_range": "25-34",
-                    "phq9_1": 1, "phq9_2": 2, "phq9_3": 1, "phq9_4": 2, "phq9_5": 1,
-                    "phq9_6": 1, "phq9_7": 2, "phq9_8": 0, "phq9_9": 0,
-                    "gad7_1": 3, "gad7_2": 2, "gad7_3": 3, "gad7_4": 2, 
-                    "gad7_5": 2, "gad7_6": 1, "gad7_7": 2,
-                    "pcl5_1": 1, "pcl5_2": 0, "pcl5_3": 0, "pcl5_4": 1,
-                    "pcl5_5": 1, "pcl5_6": 0, "pcl5_7": 1, "pcl5_8": 0,
-                    "sleep_quality": 2, "exercise_frequency": "rarely",
-                    "preferred_support_type": "individual_therapy"
-                }
+                    "phq9_1": 1,
+                    "phq9_2": 2,
+                    "phq9_3": 1,
+                    "phq9_4": 2,
+                    "phq9_5": 1,
+                    "phq9_6": 1,
+                    "phq9_7": 2,
+                    "phq9_8": 0,
+                    "phq9_9": 0,
+                    "gad7_1": 3,
+                    "gad7_2": 2,
+                    "gad7_3": 3,
+                    "gad7_4": 2,
+                    "gad7_5": 2,
+                    "gad7_6": 1,
+                    "gad7_7": 2,
+                    "pcl5_1": 1,
+                    "pcl5_2": 0,
+                    "pcl5_3": 0,
+                    "pcl5_4": 1,
+                    "pcl5_5": 1,
+                    "pcl5_6": 0,
+                    "pcl5_7": 1,
+                    "pcl5_8": 0,
+                    "sleep_quality": 2,
+                    "exercise_frequency": "rarely",
+                    "preferred_support_type": "individual_therapy",
+                },
             },
             {
                 "name": "Moderate Depression Case",
                 "data": {
                     "primary_concern": "depression",
                     "age_range": "35-44",
-                    "phq9_1": 3, "phq9_2": 3, "phq9_3": 2, "phq9_4": 3, "phq9_5": 2,
-                    "phq9_6": 2, "phq9_7": 2, "phq9_8": 1, "phq9_9": 0,
-                    "gad7_1": 1, "gad7_2": 1, "gad7_3": 2, "gad7_4": 1, 
-                    "gad7_5": 0, "gad7_6": 1, "gad7_7": 1,
-                    "pcl5_1": 0, "pcl5_2": 1, "pcl5_3": 0, "pcl5_4": 0,
-                    "pcl5_5": 1, "pcl5_6": 2, "pcl5_7": 1, "pcl5_8": 0,
-                    "sleep_quality": 1, "exercise_frequency": "never",
-                    "preferred_support_type": "individual_therapy"
-                }
-            }
+                    "phq9_1": 3,
+                    "phq9_2": 3,
+                    "phq9_3": 2,
+                    "phq9_4": 3,
+                    "phq9_5": 2,
+                    "phq9_6": 2,
+                    "phq9_7": 2,
+                    "phq9_8": 1,
+                    "phq9_9": 0,
+                    "gad7_1": 1,
+                    "gad7_2": 1,
+                    "gad7_3": 2,
+                    "gad7_4": 1,
+                    "gad7_5": 0,
+                    "gad7_6": 1,
+                    "gad7_7": 1,
+                    "pcl5_1": 0,
+                    "pcl5_2": 1,
+                    "pcl5_3": 0,
+                    "pcl5_4": 0,
+                    "pcl5_5": 1,
+                    "pcl5_6": 2,
+                    "pcl5_7": 1,
+                    "pcl5_8": 0,
+                    "sleep_quality": 1,
+                    "exercise_frequency": "never",
+                    "preferred_support_type": "individual_therapy",
+                },
+            },
         ]
-        
+
         for i, case in enumerate(test_cases, 1):
             print(f"\n🧪 Test Case {i}: {case['name']}")
             print("-" * 40)
-            
+
             try:
-                result = self.route_user(case['data'])
+                result = self.route_user(case["data"])
                 print(f"🎯 Routing: {result['primary_category']}")
                 print(f"📊 Confidence: {result['confidence']:.2f}")
                 print(f"💭 Reasoning: {result['reasoning']}")
-                print(f"📋 Scores: PHQ-9={result['clinical_scores']['phq9']}, GAD-7={result['clinical_scores']['gad7']}, PCL-5={result['clinical_scores']['pcl5']}")
-                
-                if result['crisis_flag']:
+                print(
+                    f"📋 Scores: PHQ-9={result['clinical_scores']['phq9']}, GAD-7={result['clinical_scores']['gad7']}, PCL-5={result['clinical_scores']['pcl5']}"
+                )
+
+                if result["crisis_flag"]:
                     print("🚨 CRISIS FLAG: Immediate intervention required!")
-                    
+
             except Exception as e:
                 print(f"❌ Error: {e}")
+
 
 def main():
     """Main function to train and test the Gemini routing agent."""
     try:
         print("🤖 HarmoniAI Gemini Routing Agent")
         print("=" * 50)
-        
+
         # Check for API key
         if not os.getenv("GOOGLE_API_KEY"):
             print("❌ Google API key not found!")
@@ -454,22 +506,23 @@ def main():
             print("   2. Create a new API key")
             print("   3. Set environment variable: export GOOGLE_API_KEY='your-key'")
             return
-        
+
         print("🚀 Initializing Gemini routing agent...")
         trainer = GeminiRoutingAgentTrainer()
-        
+
         print("📚 Training the agent...")
         trainer.train_and_save()
-        
+
         print("✅ Training complete! Testing routing decisions...")
         trainer.test_routing()
-        
+
         print("\n🎉 Gemini routing agent is ready to use!")
         print("💡 It's free and works just like the OpenAI version!")
-        
+
     except Exception as e:
         logger.error(f"Error: {e}")
         print(f"❌ Error: {e}")
 
+
 if __name__ == "__main__":
-    main() 
+    main()

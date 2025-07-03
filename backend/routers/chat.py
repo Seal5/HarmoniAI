@@ -1,10 +1,12 @@
 from fastapi import APIRouter
-from pydantic import BaseModel 
+from pydantic import BaseModel
 
 router = APIRouter()
 
+
 class Message(BaseModel):
     message: str
+
 
 @router.post("/api/chat")
 async def chat_endpoint(msg: Message):
