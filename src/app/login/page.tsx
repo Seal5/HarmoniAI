@@ -14,6 +14,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, CheckCircle } from "lucide-react"
 import ForgotPasswordModal from "@/components/forgot-password-modal"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { auth } from "@/firebase"
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth"
+
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -59,30 +62,52 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
+  
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        loginForm.email,
+        loginForm.password
+      )
+      const user = userCredential.user
+      console.log("Logged in:", user)
+  
       router.push("/chat")
-    }, 1500)
+    } catch (error: any) {
+      console.error("Login error:", error.message)
+      alert(error.message)
+    } finally {
+      setIsLoading(false)
+    }
   }
-
+  
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     if (signupForm.password !== signupForm.confirmPassword) {
       alert("Passwords don't match!")
       return
     }
-
+  
     setIsLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
+  
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        signupForm.email,
+        signupForm.password
+      )
+      const user = userCredential.user
+      console.log("Signed up:", user)
+  
       router.push("/chat")
-    }, 1500)
+    } catch (error: any) {
+      console.error("Signup error:", error.message)
+      alert(error.message)
+    } finally {
+      setIsLoading(false)
+    }
   }
-
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
