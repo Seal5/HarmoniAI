@@ -14,6 +14,9 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, CheckCircle } from "lucide-react"
 import ForgotPasswordModal from "@/components/forgot-password-modal"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { auth } from "@/firebase";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -60,29 +63,37 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      router.push("/chat")
-    }, 1500)
+    try {
+      await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
+      router.push("/chat");
+    } catch (error) {
+      alert(`Firebase: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+    
   }
 
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault(); // Also missing
+    setIsLoading(true); // ADD THIS
+  
     if (signupForm.password !== signupForm.confirmPassword) {
-      alert("Passwords don't match!")
-      return
+      alert("Passwords don't match!");
+      setIsLoading(false); // Add this too to avoid infinite loading
+      return;
     }
-
-    setIsLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      router.push("/chat")
-    }, 1500)
+  
+    try {
+      await createUserWithEmailAndPassword(auth, signupForm.email, signupForm.password);
+      router.push("/chat");
+    } catch (error) {
+      alert(`Firebase: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   }
-
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
