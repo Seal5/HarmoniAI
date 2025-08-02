@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/components/typing-indicator.jsx", "src/components/settings-modal.jsx", "src/components/message-bubble.jsx", "src/app/chat/GeminiChat.jsx"],
   "exclude": ["node_modules"]
 }
