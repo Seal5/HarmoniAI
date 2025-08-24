@@ -45,37 +45,38 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Calm brown/beige color scheme */
+  --background: 254 247 240; /* warm-beige-50 */
+  --foreground: 83 51 27; /* warm-beige-900 */
+  --card: 250 249 247; /* coffee-50 */
+  --card-foreground: 83 51 27;
+  --popover: 250 249 247;
+  --popover-foreground: 83 51 27;
+  --primary: 156 93 47; /* warm-beige-700 - main brand color */
+  --primary-foreground: 254 247 240;
+  --secondary: 240 237 231; /* coffee-100 */
+  --secondary-foreground: 135 115 91; /* coffee-700 */
+  --muted: 240 237 231;
+  --muted-foreground: 135 115 91;
+  --accent: 230 225 215; /* coffee-200 */
+  --accent-foreground: 83 51 27;
+  --destructive: 220 38 127; /* warm red for errors */
+  --border: 230 225 215;
+  --input: 230 225 215;
+  --ring: 156 93 47;
+  --chart-1: 212 150 90; /* warm-beige-500 */
+  --chart-2: 180 161 146; /* coffee-500 */
+  --chart-3: 158 139 114; /* coffee-600 */
+  --chart-4: 193 128 74; /* warm-beige-600 */
+  --chart-5: 135 115 91; /* coffee-700 */
+  --sidebar: 247 230 211;
+  --sidebar-foreground: 83 51 27;
+  --sidebar-primary: 156 93 47;
+  --sidebar-primary-foreground: 254 247 240;
+  --sidebar-accent: 240 237 231;
+  --sidebar-accent-foreground: 135 115 91;
+  --sidebar-border: 230 225 215;
+  --sidebar-ring: 156 93 47;
 }
 
 .dark {

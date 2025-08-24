@@ -3,36 +3,57 @@ import { Redis } from 'ioredis';
 // Redis client configuration with graceful fallback
 let redis: Redis | null = null;
 let redisAvailable = false;
+let lastErrorLog = 0;
+let errorCount = 0;
 
-try {
-  redis = new Redis({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-    retryDelayOnFailover: 100,
-    enableReadyCheck: true,
-    maxRetriesPerRequest: 3, // Limit retries to prevent infinite loops
-    connectTimeout: 5000, // 5 second timeout
-    lazyConnect: true, // Don't connect until first command
-  });
+// Only try to initialize Redis if explicitly enabled
+const REDIS_ENABLED = process.env.REDIS_ENABLED === 'true';
 
-  redis.on('connect', () => {
-    console.log('🔴 Redis connected successfully');
-    redisAvailable = true;
-  });
+if (REDIS_ENABLED) {
+  try {
+    redis = new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: parseInt(process.env.REDIS_PORT || '6379'),
+      password: process.env.REDIS_PASSWORD,
+      retryDelayOnFailover: 100,
+      enableReadyCheck: false,
+      maxRetriesPerRequest: 1, // Reduce retries
+      connectTimeout: 3000, // Shorter timeout
+      lazyConnect: true,
+      retryDelayOnClusterDown: 300,
+      retryDelayOnFailover: 100,
+    });
 
-  redis.on('error', (error) => {
-    console.warn('⚠️ Redis connection error (falling back to localStorage):', error.message);
+    redis.on('connect', () => {
+      console.log('✅ Redis connected successfully');
+      redisAvailable = true;
+      errorCount = 0; // Reset error count on successful connection
+    });
+
+    redis.on('error', (error) => {
+      errorCount++;
+      const now = Date.now();
+      
+      // Only log error once every 30 seconds to prevent spam
+      if (now - lastErrorLog > 30000) {
+        console.warn(`⚠️ Redis unavailable (${errorCount} attempts), using memory storage only:`, error.message);
+        lastErrorLog = now;
+      }
+      redisAvailable = false;
+    });
+
+    redis.on('close', () => {
+      redisAvailable = false;
+      // Don't log close events as they're expected when Redis is unavailable
+    });
+
+  } catch (error) {
+    console.warn('⚠️ Redis initialization disabled, using memory storage only');
+    redis = null;
     redisAvailable = false;
-  });
-
-  redis.on('close', () => {
-    console.log('🔴 Redis connection closed');
-    redisAvailable = false;
-  });
-
-} catch (error) {
-  console.warn('⚠️ Redis initialization failed (using localStorage only):', error);
+  }
+} else {
+  console.log('📝 Redis disabled, using memory storage for chat history');
   redis = null;
   redisAvailable = false;
 }

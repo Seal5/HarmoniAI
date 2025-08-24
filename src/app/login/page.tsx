@@ -14,13 +14,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, CheckCircle } from "lucide-react"
 import ForgotPasswordModal from "@/components/forgot-password-modal"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { auth } from "@/firebase";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth"; 
+import { useUser } from "@/contexts/UserContext"
 
 export default function LoginPage() {
+  const { setUser } = useUser()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [error, setError] = useState("")
   const router = useRouter()
 
   const [loginForm, setLoginForm] = useState({
@@ -59,28 +60,65 @@ export default function LoginPage() {
   }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
+    setIsLoading(true)
+    setError("")
+    
     try {
-      await signInWithEmailAndPassword(auth, loginForm.email, loginForm.password);
-      router.push("/chat");
+      // For now, we'll create a simple login system
+      // In a real app, you'd validate against a database
+      const userData = {
+        id: `user_${Date.now()}`,
+        email: loginForm.email,
+        username: loginForm.email.split('@')[0],
+        hasCompletedPHQ9: false, // Will be checked from database
+      }
+      
+      setUser(userData)
+      localStorage.setItem('harmoniai_user', JSON.stringify(userData))
+      
+      // Redirect to dashboard to check PHQ-9 status
+      router.push('/dashboard')
+      
     } catch (error: any) {
-      alert(error.message);
+      setError(error.message || 'Login failed')
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
   
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
+    setIsLoading(true)
+    setError("")
+    
     if (signupForm.password !== signupForm.confirmPassword) {
-      alert("Passwords don't match!");
-      return;
+      setError("Passwords don't match!")
+      setIsLoading(false)
+      return
     }
+    
     try {
-      await createUserWithEmailAndPassword(auth, signupForm.email, signupForm.password);
-      router.push("/chat");
+      // Create new user
+      const userData = {
+        id: `user_${Date.now()}`,
+        email: signupForm.email,
+        username: signupForm.name,
+        hasCompletedPHQ9: false, // New users need to complete PHQ-9
+      }
+      
+      setUser(userData)
+      localStorage.setItem('harmoniai_user', JSON.stringify(userData))
+      
+      // New users should go to quiz first
+      router.push('/quiz')
+      
     } catch (error: any) {
-      alert(error.message);
+      setError(error.message || 'Signup failed')
+    } finally {
+      setIsLoading(false)
     }
-  };
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -111,6 +149,11 @@ export default function LoginPage() {
               <Alert className="mb-4">
                 <CheckCircle className="h-4 w-4" />
                 <AlertDescription>{successMessage}</AlertDescription>
+              </Alert>
+            )}
+            {error && (
+              <Alert className="mb-4 border-red-200 bg-red-50">
+                <AlertDescription className="text-red-800">{error}</AlertDescription>
               </Alert>
             )}
             <Tabs value={defaultTab} onValueChange={setDefaultTab} className="w-full">

@@ -3,9 +3,10 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { messages } = body;
+    const { messages, context } = body;
 
     console.log("🔥 API called with messages:", messages);
+    console.log("🧠 User context:", context);
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json(
@@ -20,6 +21,34 @@ export async function POST(req: Request) {
         { error: "API key not configured" },
         { status: 500 }
       );
+    }
+
+    // Create context-aware system instruction
+    let systemInstruction = "You are Harmoni, a compassionate AI therapeutic companion. Provide empathetic, supportive responses that help users process their emotions and thoughts. Be warm, understanding, and non-judgmental. Offer gentle guidance and coping strategies when appropriate, but always encourage users to seek professional help for serious mental health concerns.";
+    
+    // Add PHQ-9 context if available
+    if (context && context.hasCompletedPHQ9) {
+      const { phq9Score, severity } = context;
+      
+      systemInstruction += `\n\nIMPORTANT CONTEXT: This user recently completed a PHQ-9 depression assessment with a score of ${phq9Score}/27 indicating ${severity?.toLowerCase()} symptoms. `;
+      
+      switch (severity) {
+        case 'MINIMAL':
+          systemInstruction += "They are doing relatively well but may benefit from preventive mental health strategies and ongoing support.";
+          break;
+        case 'MILD':
+          systemInstruction += "They may be experiencing some depressive symptoms. Focus on validation, coping strategies, and gentle encouragement.";
+          break;
+        case 'MODERATE':
+          systemInstruction += "They are experiencing moderate depressive symptoms. Provide supportive strategies while gently encouraging professional help if symptoms persist.";
+          break;
+        case 'MODERATELY_SEVERE':
+        case 'SEVERE':
+          systemInstruction += "They are experiencing significant depressive symptoms. While providing support, consistently encourage professional mental health care and be alert to crisis situations.";
+          break;
+      }
+      
+      systemInstruction += " Tailor your responses to their current mental health state, but don't constantly reference their assessment unless relevant to the conversation.";
     }
 
     // Format messages for Gemini
@@ -44,7 +73,7 @@ export async function POST(req: Request) {
           },
           systemInstruction: {
             parts: [{
-              text: "You are Harmoni, a compassionate AI therapeutic companion. Provide empathetic, supportive responses that help users process their emotions and thoughts. Be warm, understanding, and non-judgmental. Offer gentle guidance and coping strategies when appropriate, but always encourage users to seek professional help for serious mental health concerns."
+              text: systemInstruction
             }]
           },
         }),

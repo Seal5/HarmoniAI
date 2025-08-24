@@ -14,6 +14,31 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
+        // Calm brown/beige color palette
+        'warm-beige': {
+          50: '#fdf7f0',
+          100: '#f7e6d3',
+          200: '#f1d5b6',
+          300: '#ebc499',
+          400: '#e5b37c',
+          500: '#d4965a',
+          600: '#c1804a',
+          700: '#9c5d2f',
+          800: '#7a4625',
+          900: '#58331b',
+        },
+        'coffee': {
+          50: '#faf9f7',
+          100: '#f0ede7',
+          200: '#e6e1d7',
+          300: '#dcd5c7',
+          400: '#c8b8a1',
+          500: '#b4a189',
+          600: '#9e8b72',
+          700: '#87735b',
+          800: '#6d5c48',
+          900: '#534535',
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
