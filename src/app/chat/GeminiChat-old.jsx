@@ -8,6 +8,7 @@ import MessageBubble from "@/components/message-bubble"
 import TypingIndicator from "@/components/typing-indicator"
 import SettingsModal from "@/components/settings-modal"
 import { cn } from "@/lib/utils";
+import { geminiChat } from "@/lib/geminiChat"
 
 export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
@@ -20,79 +21,31 @@ export default function ChatPage() {
   const textareaRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // Initialize by loading conversations from Redis
   useEffect(() => {
-    console.log("🚀 Initializing chat...");
-    loadConversationsFromRedis();
+    console.log("🔄 Initializing app...");
+    
+    // Clear corrupted storage for fresh start
+    localStorage.removeItem("harmoni_conversations");
+    console.log("🗑️ Cleared localStorage for fresh start");
+    
+    // Always start with a fresh conversation for now
+    createNewConversation();
   }, []);
 
-  // Scroll to bottom when messages change
+  // Save conversations whenever they change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversations, isTyping]);
-
-  // Save conversations to localStorage
-  useEffect(() => {
-    if (conversations.length > 0) {
-      localStorage.setItem("harmoni_conversations", JSON.stringify(conversations));
-    }
+    localStorage.setItem("harmoni_conversations", JSON.stringify(conversations));
   }, [conversations]);
 
-  // Load conversations from Redis or localStorage
-  const loadConversationsFromRedis = async () => {
-    try {
-      console.log("📚 Loading conversations from Redis...");
-      
-      const response = await fetch('/api/conversations');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.conversations.length > 0) {
-          console.log(`✅ Loaded ${data.conversations.length} conversations from Redis`);
-          setConversations(data.conversations);
-          setActiveConversationId(data.conversations[0].id);
-          return;
-        }
-      }
-      
-      // Fallback to localStorage when Redis is unavailable
-      console.log("📝 Redis unavailable, checking localStorage...");
-      const savedConversations = localStorage.getItem("harmoni_conversations");
-      if (savedConversations) {
-        const parsedConversations = JSON.parse(savedConversations);
-        if (parsedConversations.length > 0) {
-          console.log(`✅ Loaded ${parsedConversations.length} conversations from localStorage`);
-          setConversations(parsedConversations);
-          setActiveConversationId(parsedConversations[0].id);
-          return;
-        }
-      }
-      
-      // If no conversations found anywhere, create first one
-      console.log("📝 No conversations found, creating first one");
-      await createFirstConversation();
-    } catch (error) {
-      console.error("❌ Error loading conversations:", error);
-      // Try localStorage fallback on error
-      const savedConversations = localStorage.getItem("harmoni_conversations");
-      if (savedConversations) {
-        try {
-          const parsedConversations = JSON.parse(savedConversations);
-          if (parsedConversations.length > 0) {
-            console.log(`✅ Fallback: Loaded ${parsedConversations.length} conversations from localStorage`);
-            setConversations(parsedConversations);
-            setActiveConversationId(parsedConversations[0].id);
-            return;
-          }
-        } catch (parseError) {
-          console.error("❌ Error parsing localStorage conversations:", parseError);
-        }
-      }
-      await createFirstConversation();
-    }
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Create the very first conversation when none exist
-  const createFirstConversation = async () => {
+  useEffect(() => {
+    scrollToBottom();
+  }, [conversations, activeConversationId, isTyping]);
+
+  const createNewConversation = () => {
     const newConv = {
       id: Date.now().toString(),
       title: "New Conversation",
@@ -106,82 +59,8 @@ export default function ChatPage() {
         },
       ],
     };
-    
-    console.log("✨ Created first conversation:", newConv);
-    // Set as first conversation (replace empty array)
-    setConversations([newConv]);
+    setConversations((prev) => [newConv, ...prev]);
     setActiveConversationId(newConv.id);
-    
-    // Save to Redis
-    await saveConversationToRedis(newConv);
-  };
-
-  // Save conversation to Redis
-  const saveConversationToRedis = async (conversation) => {
-    try {
-      console.log(`💾 Saving conversation ${conversation.id} to Redis...`);
-      
-      const response = await fetch('/api/conversations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation })
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        console.log(`✅ Conversation ${conversation.id} saved to Redis`);
-      } else {
-        console.error(`❌ Failed to save conversation: ${data.error}`);
-      }
-    } catch (error) {
-      console.error("❌ Error saving conversation to Redis:", error);
-    }
-  };
-
-  // Update conversation in Redis
-  const updateConversationInRedis = async (conversation) => {
-    try {
-      console.log(`🔄 Updating conversation ${conversation.id} in Redis...`);
-      
-      const response = await fetch('/api/conversations', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversation })
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        console.log(`✅ Conversation ${conversation.id} updated in Redis`);
-      } else {
-        console.error(`❌ Failed to update conversation: ${data.error}`);
-      }
-    } catch (error) {
-      console.error("❌ Error updating conversation in Redis:", error);
-    }
-  };
-
-  const createNewConversation = async () => {
-    const newConv = {
-      id: Date.now().toString(),
-      title: "New Conversation",
-      date: new Date().toISOString().split("T")[0],
-      messages: [
-        {
-          id: "init",
-          role: "model",
-          content: "Hello! I'm Harmoni, your AI therapeutic companion. I'm here to listen and support you. How are you doing today?",
-          timestamp: new Date(),
-        },
-      ],
-    };
-    
-    console.log("✨ Created new conversation:", newConv);
-    // Add new conversation to existing ones instead of replacing them
-    setConversations(prev => [newConv, ...prev]);
-    setActiveConversationId(newConv.id);
-    
-    // Save to Redis
-    await saveConversationToRedis(newConv);
   };
 
   const generateConversationTitle = (userMessage) => {
@@ -199,121 +78,137 @@ export default function ChatPage() {
     if (message.includes('relationship') || message.includes('partner') || message.includes('friend')) {
       return "Relationship Issues";
     }
+    if (message.includes('work') || message.includes('job') || message.includes('career')) {
+      return "Work & Career";
+    }
+    if (message.includes('family') || message.includes('parent') || message.includes('sibling')) {
+      return "Family Matters";
+    }
+    if (message.includes('sleep') || message.includes('tired') || message.includes('insomnia')) {
+      return "Sleep & Rest";
+    }
+    if (message.includes('angry') || message.includes('frustrated') || message.includes('mad')) {
+      return "Anger & Frustration";
+    }
+    if (message.includes('lonely') || message.includes('alone') || message.includes('isolated')) {
+      return "Loneliness";
+    }
+    if (message.includes('confident') || message.includes('self-esteem') || message.includes('worth')) {
+      return "Self-Confidence";
+    }
     
     const words = userMessage.split(' ').slice(0, 3).join(' ');
     return words.length > 20 ? words.substring(0, 20) + "..." : words;
   };
 
-  const sendMessage = async (messageText) => {
-    try {
-      console.log("📤 Sending message:", messageText);
-      
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ messages: messageText }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("📨 Received response:", data);
-      return data.reply;
-    } catch (error) {
-      console.error("❌ Send message error:", error);
-      throw error;
-    }
-  };
-
   const handleSendMessage = async () => {
-    const message = inputValue.trim();
-    if (!message || isTyping) return;
+    if (!inputValue.trim()) return;
 
-    console.log("💬 Handling send message:", message);
-
-    // Clear input and start typing indicator
-    setInputValue("");
+    const currentInputValue = inputValue.trim();
+    setInputValue(""); // Clear input immediately
     setIsTyping(true);
-
-    // Find current conversation
+    
+    // Find the current conversation
     const currentConv = conversations.find((c) => c.id === activeConversationId);
     if (!currentConv) {
       console.error("❌ No active conversation found");
       setIsTyping(false);
       return;
     }
-
+    
     // Create user message
     const userMessage = {
       id: Date.now().toString(),
       role: "user",
-      content: message,
+      content: currentInputValue,
       timestamp: new Date(),
     };
-
-    // Add user message to conversation
+    
+    // Update conversation with user message
+    const updatedMessages = [...currentConv.messages, userMessage];
+    const isFirstUserMessage = currentConv.messages.length === 1 && currentConv.messages[0].role === "model";
+    const newTitle = isFirstUserMessage ? generateConversationTitle(currentInputValue) : currentConv.title;
+    
     const updatedConversation = {
       ...currentConv,
-      title: currentConv.messages.length === 1 ? generateConversationTitle(message) : currentConv.title,
-      messages: [...currentConv.messages, userMessage],
+      title: newTitle,
+      messages: updatedMessages,
     };
-
-    // Update conversations with user message
-    setConversations(prev => prev.map(conv => 
+    
+    // Update conversations array
+    const updatedConversations = conversations.map((conv) =>
       conv.id === activeConversationId ? updatedConversation : conv
-    ));
+    );
+    
+    setConversations(updatedConversations);
 
     try {
-      // Prepare messages for API (exclude initial greeting)
+      console.log("🔍 Updated conversation:", updatedConversation);
+      console.log("🔍 Updated conversation messages:", updatedConversation.messages);
+      
+      // Prepare messages for API (exclude the initial "Hello" from Harmoni)
+      // Use the updated conversation that includes the new user message
+      console.log("🔍 updatedConversation.messages:", updatedConversation.messages);
+      console.log("🔍 updatedConversation.messages type:", typeof updatedConversation.messages);
+      console.log("🔍 updatedConversation.messages isArray:", Array.isArray(updatedConversation.messages));
+      
       const messagesToSend = updatedConversation.messages.slice(1);
+      console.log("📨 Messages to send to API:", messagesToSend);
+      console.log("📨 messagesToSend type:", typeof messagesToSend);
+      console.log("📨 messagesToSend isArray:", Array.isArray(messagesToSend));
+      console.log("📨 messagesToSend length:", messagesToSend?.length);
       
-      console.log("📨 Sending to API:", messagesToSend);
-
-      // Get AI response
-      const aiReply = await sendMessage(messagesToSend);
-
-      // Create AI message
-      const aiMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "model",
-        content: aiReply,
-        timestamp: new Date(),
-      };
-
-      // Add AI response to conversation
-      const finalConversation = {
-        ...updatedConversation,
-        messages: [...updatedConversation.messages, aiMessage]
-      };
+      if (!Array.isArray(messagesToSend)) {
+        console.error("❌ messagesToSend is not an array!", messagesToSend);
+        throw new Error("Messages to send is not an array");
+      }
       
-      setConversations(prev => prev.map(conv => 
-        conv.id === activeConversationId ? finalConversation : conv
-      ));
+      if (messagesToSend.length === 0) {
+        console.error("❌ No messages to send to API!");
+        throw new Error("No messages to send to API");
+      }
       
-      // Save the updated conversation to Redis
-      await updateConversationInRedis(finalConversation);
+      console.log("🚀 Calling geminiChat with:", { messages: messagesToSend });
+      const { data } = await geminiChat({ messages: messagesToSend });
 
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === activeConversationId
+            ? {
+                ...conv,
+                messages: [
+                  ...conv.messages,
+                  {
+                    id: (Date.now() + 1).toString(),
+                    role: "model",
+                    content: data.reply,
+                    timestamp: new Date(),
+                  },
+                ],
+              }
+            : conv
+        )
+      );
     } catch (error) {
-      console.error("❌ Error getting AI response:", error);
-      
-      // Add error message
-      const errorMessage = {
-        id: (Date.now() + 2).toString(),
-        role: "model",
-        content: "I apologize, but I'm having trouble responding right now. Please try again in a moment. I'm here to support you.",
-        timestamp: new Date(),
-      };
-
-      setConversations(prev => prev.map(conv => 
-        conv.id === activeConversationId 
-          ? { ...conv, messages: [...conv.messages, errorMessage] }
-          : conv
-      ));
+      console.error("Error getting AI response:", error);
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === activeConversationId
+            ? {
+                ...conv,
+                messages: [
+                  ...conv.messages,
+                  {
+                    id: (Date.now() + 1).toString(),
+                    role: "model",
+                    content: "I apologize, but I'm having trouble responding right now. Please try again in a moment. I'm here to support you.",
+                    timestamp: new Date(),
+                  },
+                ],
+              }
+            : conv
+        )
+      );
     } finally {
       setIsTyping(false);
     }

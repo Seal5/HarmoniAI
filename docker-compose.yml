@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: harmoni-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: harmonidb
+      POSTGRES_USER: harmoni
+      POSTGRES_PASSWORD: harmoni123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U harmoni -d harmonidb"]
+      timeout: 3s
+      retries: 5
+      interval: 30s
+    networks:
+      - harmoni-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: harmoni-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 3s
+      retries: 5
+      interval: 30s
+    networks:
+      - harmoni-network
+
+  # Optional: Redis Commander (Web UI for Redis)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: harmoni-redis-ui
+    restart: unless-stopped
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - harmoni-network
+
+  # Optional: pgAdmin (Web UI for PostgreSQL)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: harmoni-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@harmoni.ai
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres
+    networks:
+      - harmoni-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  harmoni-network:
+    driver: bridge

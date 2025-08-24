@@ -4,11 +4,11 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Settings, Download, RotateCcw, Menu, X, Plus } from "lucide-react";
-import MessageBubble from "@/components/message-bubble"
-import TypingIndicator from "@/components/typing-indicator"
-import SettingsModal from "@/components/settings-modal"
+import MessageBubble from "@/components/message-bubble";
+import TypingIndicator from "@/components/typing-indicator";
+import SettingsModal from "@/components/settings-modal";
 import { cn } from "@/lib/utils";
-import { geminiChat } from "@/lib/geminiChat"
+import { geminiChat } from "@/lib/geminiChat";
 
 export default function ChatPage() {
   const [conversations, setConversations] = useState([]);
@@ -145,9 +145,10 @@ export default function ChatPage() {
     const currentConv = updatedConversations.find((c) => c.id === activeConversationId);
     setInputValue("");
 
-    try {
-      const { data } = await geminiChat({ messages: currentConv?.messages.slice(1) }); // Exclude the initial "Hello" from Harmoni
+    console.log("Sending messages to the API:", currentConv?.messages.slice(1)); // Log messages being sent
 
+    try {
+      const response = await geminiChat({ messages: currentConv?.messages.slice(1) });
       setConversations((prev) =>
         prev.map((conv) =>
           conv.id === activeConversationId
@@ -158,7 +159,7 @@ export default function ChatPage() {
                   {
                     id: (Date.now() + 1).toString(),
                     role: "model",
-                    content: data.reply,
+                    content: response.reply, 
                     timestamp: new Date(),
                   },
                 ],
@@ -280,7 +281,7 @@ export default function ChatPage() {
               <div className="text-xs text-gray-500 mt-1 flex items-center justify-between">
                 <span>{conv.date}</span>
                 <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                  {conv.messages.filter(m => m.role === "user").length} messages
+                  {conv.messages.filter((m) => m.role === "user").length} messages
                 </span>
               </div>
             </div>
@@ -359,7 +360,9 @@ export default function ChatPage() {
               disabled={!inputValue.trim() || isTyping}
               className={cn(
                 "rounded-2xl w-12 h-12 p-0 transition-all duration-200",
-                inputValue.trim() ? "bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 shadow-lg" : "bg-gray-300 hover:bg-gray-400",
+                inputValue.trim()
+                  ? "bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 shadow-lg"
+                  : "bg-gray-300 hover:bg-gray-400",
                 "disabled:opacity-50"
               )}
             >
