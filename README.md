@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HarmoniAI — Agentic LLM Therapist
 
-## Getting Started
+Build empathetic, safer AI therapy experiences with multi‑agent LLMs, RAG, and clinically aligned monitoring.
 
-First, run the development server:
+## Why HarmoniAI
+- Empathetic conversations guided by an agentic LLM workflow
+- Grounded answers via RAG + reranking to reduce unsupported claims
+- Built‑in PHQ‑9 tracking and safety checks for responsible guidance
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## What’s Inside
+- Agentic orchestration (Intake, RAG, Therapy Coach, Safety)
+- OpenAI‑compatible generation and Cohere Rerank support
+- Next.js app with Prisma + Postgres for users, chats, and PHQ‑9
+
+## Stack
+- Next.js 15 + React 19
+- PostgreSQL 15/16
+- Prisma ORM
+- Tailwind CSS 4
+- Optional: Redis (disabled by default)
+ - Optional: OpenAI‑compatible LLM endpoint, Cohere Rerank for RAG
+
+## Prerequisites
+- Node.js 18+
+- PostgreSQL on localhost:5432 (see `POSTGRESQL_SETUP_GUIDE.md`)
+
+## Quick Start
+1) Install dependencies
+```powershell
+cd "C:\Users\<you>\Documents\GitHub\harmoniai"
+npm ci
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Create the database and user (once)
+```powershell
+psql -U postgres -h localhost -p 5432
+```
+Inside psql:
+```sql
+CREATE DATABASE harmonidb;
+CREATE USER harmoni WITH PASSWORD 'harmoni123';
+GRANT ALL PRIVILEGES ON DATABASE harmonidb TO harmoni;
+\c harmonidb
+GRANT ALL ON SCHEMA public TO harmoni;
+\q
+```
+More details: `POSTGRESQL_SETUP_GUIDE.md`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3) Create `.env.local`
+```env
+# PostgreSQL
+DATABASE_URL="postgresql://harmoni:harmoni123@localhost:5432/harmonidb?schema=public"
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=harmonidb
+POSTGRES_USER=harmoni
+POSTGRES_PASSWORD=harmoni123
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Gemini AI API Key
+GEMINI_API_KEY=REPLACE_WITH_YOUR_KEY
 
-## Learn More
+# Redis (disabled locally)
+REDIS_ENABLED=false
+REDIS_HOST=localhost
+REDIS_PORT=6379
 
-To learn more about Next.js, take a look at the following resources:
+# App
+NODE_ENV=development
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+4) Generate Prisma client and sync schema
+```powershell
+npx prisma generate
+npx prisma db push
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+5) Run the app
+```powershell
+npm run dev
+# or
+./run-dev.bat
+```
+Open http://localhost:3000
 
-## Deploy on Vercel
+## AI & RAG Configuration (optional)
+Add to `.env.local` as needed (use your own keys):
+```env
+# OpenAI‑compatible base (e.g., local open‑weight server or provider)
+OPENAI_API_KEY=sk-your-key
+OPENAI_BASE_URL=https://your-openai-compatible-host/v1
+OPENAI_MODEL=gpt-4o-mini
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Cohere Rerank
+COHERE_API_KEY=your-cohere-key
+COHERE_RERANK_MODEL=rerank-english-v3.0
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Embeddings/Vector store (example)
+VECTOR_DB_URL=http://localhost:6333
+VECTOR_DB_API_KEY=
+```
+
+## Prisma Workflow (dev)
+- Update models in `prisma/schema.prisma`
+- Regenerate client after changes:
+```powershell
+npx prisma generate
+```
+- Sync schema to the database (development):
+```powershell
+npx prisma db push
+```
+- Visual data browser:
+```powershell
+npx prisma studio
+```
+- Migrations (when you need tracked changes):
+```powershell
+npx prisma migrate dev -n "describe_change"
+# in CI/prod
+npx prisma migrate deploy
+```
+
+## Useful Scripts
+- `npm run dev` — start Next.js dev server (Turbopack)
+- `npm run build` — production build
+- `npm run start` — start production server
+
+## Project Structure (high‑level)
+- `src/` — application source code (Next.js)
+- `prisma/` — Prisma schema and migrations
+- `backend/` — backend utilities or services (if applicable)
+- `public/` — static assets
+- `scripts/` — helper scripts (e.g., `init-db.sql` for Docker)
