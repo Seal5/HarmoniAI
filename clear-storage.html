@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear HarmoniAI Storage</title>
+</head>
+<body>
+    <h1>Clear HarmoniAI Storage</h1>
+    <button onclick="clearStorage()">Clear Local Storage</button>
+    <div id="result"></div>
+
+    <script>
+        function clearStorage() {
+            localStorage.removeItem('harmoni_conversations');
+            document.getElementById('result').innerHTML = '<p style="color: green;">✅ Storage cleared! You can now refresh the HarmoniAI app for a fresh start.</p>';
+            console.log('Storage cleared');
+        }
+
+        // Show current storage
+        const currentData = localStorage.getItem('harmoni_conversations');
+        if (currentData) {
+            document.getElementById('result').innerHTML = '<p>Current conversations in storage: ' + currentData.length + ' characters</p>';
+        } else {
+            document.getElementById('result').innerHTML = '<p>No conversations currently stored.</p>';
+        }
+    </script>
+</body>
+</html>

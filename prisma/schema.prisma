@@ -1,0 +1,233 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for basic user information
+model User {
+  id                String              @id @default(cuid())
+  email             String?             @unique
+  username          String?             @unique
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  lastLoginAt       DateTime?
+  isActive          Boolean             @default(true)
+  
+  // User profile information
+  profile           UserProfile?
+  
+  // Questionnaire responses
+  phq9Responses     PHQ9Response[]
+  
+  // Chat conversations (if needed for future integration)
+  conversations     Conversation[]
+  
+  @@map("users")
+}
+
+// Extended user profile information
+model UserProfile {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  firstName   String?
+  lastName    String?
+  dateOfBirth DateTime?
+  gender      Gender?
+  phoneNumber String?
+  
+  // Emergency contact information
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  
+  // Medical information
+  primaryPhysician      String?
+  currentMedications    String[]
+  allergies             String[]
+  
+  // Preferences
+  preferredLanguage     String    @default("en")
+  timezone              String    @default("UTC")
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("user_profiles")
+}
+
+// PHQ-9 Depression Questionnaire Response
+model PHQ9Response {
+  id                    String              @id @default(cuid())
+  userId                String
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Assessment metadata
+  sessionId             String?             // Link to therapy session if applicable
+  assessmentDate        DateTime            @default(now())
+  completedAt           DateTime?
+  isCompleted           Boolean             @default(false)
+  
+  // PHQ-9 Questions (0-3 scale each)
+  question1Score        Int?                @db.SmallInt // Little interest or pleasure
+  question2Score        Int?                @db.SmallInt // Feeling down, depressed, hopeless
+  question3Score        Int?                @db.SmallInt // Sleep problems
+  question4Score        Int?                @db.SmallInt // Feeling tired or little energy
+  question5Score        Int?                @db.SmallInt // Poor appetite or overeating
+  question6Score        Int?                @db.SmallInt // Feeling bad about yourself
+  question7Score        Int?                @db.SmallInt // Trouble concentrating
+  question8Score        Int?                @db.SmallInt // Moving/speaking slowly or restless
+  question9Score        Int?                @db.SmallInt // Thoughts of death or self-harm
+  
+  // Calculated scores
+  totalScore            Int?                @db.SmallInt // Sum of all questions (0-27)
+  severityLevel         DepressionSeverity?
+  
+  // Functional impairment question
+  functionalImpairment  FunctionalImpairment?
+  
+  // Additional metadata
+  notes                 String?             @db.Text
+  flaggedForReview      Boolean             @default(false)
+  reviewNotes           String?             @db.Text
+  reviewedBy            String?             // Healthcare provider ID
+  reviewedAt            DateTime?
+  
+  // Risk assessment
+  suicidalIdeation      Boolean             @default(false) // Based on question 9
+  riskLevel            RiskLevel           @default(LOW)
+  
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  
+  @@map("phq9_responses")
+  @@index([userId, assessmentDate])
+  @@index([totalScore])
+  @@index([riskLevel])
+}
+
+// Chat conversations (for integration with existing chat system)
+model Conversation {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title       String
+  summary     String?   @db.Text
+  startedAt   DateTime  @default(now())
+  lastMessageAt DateTime @default(now())
+  isActive    Boolean   @default(true)
+  
+  // Link to assessments taken during this conversation
+  relatedPHQ9 String?   // PHQ9Response ID
+  
+  messages    Message[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("conversations")
+  @@index([userId, lastMessageAt])
+}
+
+// Individual chat messages
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  role           MessageRole
+  content        String       @db.Text
+  timestamp      DateTime     @default(now())
+  
+  // Metadata
+  sentiment      String?      // Positive, Negative, Neutral
+  keywords       String[]     // Extracted keywords for analysis
+  flagged        Boolean      @default(false)
+  flagReason     String?
+  
+  createdAt      DateTime     @default(now())
+  
+  @@map("messages")
+  @@index([conversationId, timestamp])
+}
+
+// Assessment schedules and reminders
+model AssessmentSchedule {
+  id              String                @id @default(cuid())
+  userId          String
+  
+  assessmentType  AssessmentType
+  frequency       ScheduleFrequency
+  nextDueDate     DateTime
+  lastCompleted   DateTime?
+  
+  isActive        Boolean               @default(true)
+  reminderSent    Boolean               @default(false)
+  
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  
+  @@map("assessment_schedules")
+  @@index([userId, nextDueDate])
+}
+
+// Enums
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  PREFER_NOT_TO_SAY
+  OTHER
+}
+
+enum DepressionSeverity {
+  MINIMAL       // 0-4
+  MILD          // 5-9
+  MODERATE      // 10-14
+  MODERATELY_SEVERE // 15-19
+  SEVERE        // 20-27
+}
+
+enum FunctionalImpairment {
+  NOT_DIFFICULT_AT_ALL
+  SOMEWHAT_DIFFICULT
+  VERY_DIFFICULT
+  EXTREMELY_DIFFICULT
+}
+
+enum RiskLevel {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum AssessmentType {
+  PHQ9
+  GAD7      // Future: Generalized Anxiety Disorder 7-item
+  DASS21    // Future: Depression, Anxiety and Stress Scale
+  CUSTOM
+}
+
+enum ScheduleFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  AS_NEEDED
+}
