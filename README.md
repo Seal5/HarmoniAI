@@ -20,6 +20,11 @@ Build empathetic, safer AI therapy experiences with multi‑agent LLMs, RAG, and
 - Optional: Redis (disabled by default)
  - Optional: OpenAI‑compatible LLM endpoint, Cohere Rerank for RAG
 
+## Examples
+<img width="3838" height="2002" alt="image" src="https://github.com/user-attachments/assets/1bceeb26-c6b4-44b8-85ba-153da393f73e" />
+<img width="3839" height="2005" alt="image" src="https://github.com/user-attachments/assets/eb25fdde-cad1-4bc3-9a33-87fcd7bd3c21" />
+<img width="1919" height="974" alt="image" src="https://github.com/user-attachments/assets/dd1fc9a6-ee93-47b3-817b-2db454ee1e9e" />
+
 ## Prerequisites
 - Node.js 18+
 - PostgreSQL on localhost:5432 (see `POSTGRESQL_SETUP_GUIDE.md`)
